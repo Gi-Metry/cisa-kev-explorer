@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Directory of CISA KEV Vulnerabilities</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #0d0f18;
+      --surface:      #13162280;
+      --surface-solid:#131622;
+      --surface2:     #1c1f30;
+      --border:       #252840;
+      --text:         #e2e8f0;
+      --muted:        #64748b;
+      --accent:       #6366f1;
+      --accent-hi:    #a5b4fc;
+      --red:          #f43f5e;
+      --red-dim:      rgba(244,63,94,.14);
+      --indigo-dim:   rgba(99,102,241,.13);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      min-height: 100dvh;
+    }
+
+    /* ── Header ── */
+    #header {
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      background: var(--surface);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 28px 16px;
+    }
+
+    .header-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -.4px;
+      color: #fff;
+    }
+
+    h1 .hi { color: var(--accent-hi); }
+
+    .meta {
+      display: flex;
+      gap: 18px;
+      margin-top: 4px;
+      font-size: 11.5px;
+      color: var(--muted);
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      background: var(--indigo-dim);
+      border: 1px solid rgba(99,102,241,.25);
+      border-radius: 999px;
+      color: var(--accent-hi);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+    }
+
+    /* ── Controls ── */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .search-wrap { position: relative; }
+
+    .search-wrap svg {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    input[type="search"],
+    select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+
+    input[type="search"] {
+      padding: 7px 12px 7px 32px;
+      width: 260px;
+    }
+
+    select { padding: 7px 12px; cursor: pointer; }
+
+    input[type="search"]:focus,
+    select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(99,102,241,.18);
+    }
+
+    .result-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+
+    /* ── File fallback ── */
+    #fallback {
+      display: none;
+      text-align: center;
+      padding: 72px 32px;
+    }
+
+    #fallback p {
+      color: var(--muted);
+      margin-bottom: 16px;
+      max-width: 400px;
+      margin-inline: auto;
+    }
+
+    #file-input-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent);
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      font-weight: 600;
+      padding: 10px 18px;
+      transition: opacity .15s;
+    }
+
+    #file-input-label:hover { opacity: .85; }
+    #file-input { display: none; }
+
+    /* ── Loading ── */
+    #loading {
+      text-align: center;
+      padding: 80px;
+      color: var(--muted);
+    }
+
+    .spinner {
+      width: 30px;
+      height: 30px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .65s linear infinite;
+      margin: 0 auto 14px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Table ── */
+    #table-wrap {
+      padding: 0 28px 40px;
+    }
+
+    table {
+      min-width: 900px;
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      background: var(--surface-solid);
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: .07em;
+      padding: 9px 12px;
+      position: sticky;
+      top: var(--thead-top, 0px);
+      text-align: left;
+      text-transform: uppercase;
+      user-select: none;
+      white-space: nowrap;
+      z-index: 100;
+      transition: color .12s;
+    }
+
+    th:hover { color: var(--text); }
+    th[data-active="1"] { color: var(--accent-hi); }
+
+    th .sort-arrow { margin-left: 4px; opacity: .5; font-size: 9px; }
+    th[data-active="1"] .sort-arrow { opacity: 1; }
+
+    td {
+      border-bottom: 1px solid var(--border);
+      padding: 9px 12px;
+      vertical-align: top;
+    }
+
+    tr:hover td { background: rgba(99,102,241,.04); }
+
+    .cve {
+      color: var(--accent-hi);
+      font-family: 'SF Mono', 'Fira Code', ui-monospace, monospace;
+      font-size: 11.5px;
+      white-space: nowrap;
+    }
+
+    .vendor { font-weight: 500; white-space: nowrap; }
+    .product { color: var(--muted); font-size: 12px; }
+
+    .vname {
+      max-width: 300px;
+      min-width: 200px;
+      font-size: 12.5px;
+    }
+
+    .date {
+      color: var(--muted);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .badge-ransomware {
+      background: var(--red-dim);
+      border-radius: 5px;
+      color: #fb7185;
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 2px 7px;
+      white-space: nowrap;
+    }
+
+    .badge-unknown { color: var(--muted); font-size: 11px; }
+
+    .cwe {
+      background: var(--indigo-dim);
+      border-radius: 4px;
+      color: var(--accent-hi);
+      display: inline-block;
+      font-family: ui-monospace, monospace;
+      font-size: 10.5px;
+      margin: 1px 2px 1px 0;
+      padding: 1px 6px;
+    }
+
+    #no-results {
+      text-align: center;
+      padding: 60px;
+      color: var(--muted);
+    }
+
+    /* ── Detail panel ── */
+    tr.data-row { cursor: pointer; }
+    tr.data-row.open td { border-bottom: none; }
+
+    tr.detail-row td {
+      background: #0f1220;
+      border-bottom: 2px solid var(--accent);
+      padding: 0;
+    }
+
+    .detail-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+
+    .detail-section {
+      padding: 16px 20px;
+      border-right: 1px solid var(--border);
+    }
+
+    .detail-section:last-child { border-right: none; }
+    .detail-section:nth-child(3),
+    .detail-section:nth-child(4) {
+      border-top: 1px solid var(--border);
+    }
+
+    .detail-label {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .08em;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .detail-text {
+      color: var(--text);
+      font-size: 12.5px;
+      line-height: 1.6;
+    }
+
+    .detail-links {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .detail-links a {
+      color: var(--accent-hi);
+      font-size: 12px;
+      overflow: hidden;
+      text-decoration: none;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .detail-links a:hover { text-decoration: underline; }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  <div class="header-row">
+    <div>
+      <h1>Directory of <span class="hi">CISA KEV</span> Vulnerabilities</h1>
+      <div class="meta">
+        <span id="meta-version"></span>
+        <span id="meta-date"></span>
+      </div>
+    </div>
+    <span class="pill" id="total-pill">—</span>
+  </div>
+
+  <div class="controls">
+    <div class="search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input type="search" id="search" placeholder="Search CVE ID, vendor, product…">
+    </div>
+
+    <select id="filter-ransomware">
+      <option value="">All ransomware</option>
+      <option value="Known">Known</option>
+      <option value="Unknown">Unknown</option>
+    </select>
+
+    <select id="filter-year">
+      <option value="">All years</option>
+    </select>
+
+    <span class="result-label" id="result-label"></span>
+  </div>
+</div>
+
+<div id="loading">
+  <div class="spinner"></div>
+  Loading vulnerabilities…
+</div>
+
+<div id="fallback">
+  <p>Could not load <code>known_exploited_vulnerabilities.json</code> automatically (browser security restriction). Please select the file manually:</p>
+  <label id="file-input-label">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    Choose JSON File
+  </label>
+  <input type="file" id="file-input" accept=".json">
+</div>
+
+<div id="table-wrap" style="display:none">
+  <table>
+    <thead>
+      <tr id="thead-row">
+        <th data-col="cveID" data-active="0">CVE ID<span class="sort-arrow"></span></th>
+        <th data-col="vendorProject" data-active="0">Vendor / Project<span class="sort-arrow"></span></th>
+        <th data-col="product" data-active="0">Product<span class="sort-arrow"></span></th>
+        <th data-col="vulnerabilityName" data-active="0">Vulnerability<span class="sort-arrow"></span></th>
+        <th data-col="dateAdded" data-active="0">Date Added<span class="sort-arrow"></span></th>
+        <th data-col="dueDate" data-active="0">Due Date<span class="sort-arrow"></span></th>
+        <th data-col="knownRansomwareCampaignUse" data-active="0">Ransomware<span class="sort-arrow"></span></th>
+        <th data-col="cwes" data-active="0">CWEs<span class="sort-arrow"></span></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <div id="no-results" style="display:none">No vulnerabilities match your filters.</div>
+</div>
+
+<script>
+  let allData = [];
+  let sortCol = 'dateAdded';
+  let sortDir = -1; // -1 desc, 1 asc
+
+  // ── Position sticky th below sticky header ──
+  function fixTheadTop() {
+    const h = document.getElementById('header').getBoundingClientRect().height;
+    document.documentElement.style.setProperty('--thead-top', h + 'px');
+  }
+
+  // ── Load data ──
+  async function tryFetch() {
+    const res = await fetch('./known_exploited_vulnerabilities.json');
+    if (!res.ok) throw new Error(res.status);
+    return res.json();
+  }
+
+  function initData(json) {
+    allData = json.vulnerabilities;
+    document.getElementById('meta-version').textContent = 'Catalog v' + json.catalogVersion;
+    document.getElementById('meta-date').textContent = 'Released ' + json.dateReleased.slice(0, 10);
+    document.getElementById('total-pill').textContent = json.count.toLocaleString() + ' entries';
+
+    // Populate year filter
+    const years = [...new Set(allData.map(v => (v.dateAdded || '').slice(0, 4)))].sort().reverse();
+    const ysel = document.getElementById('filter-year');
+    years.forEach(y => {
+      if (!y) return;
+      const o = document.createElement('option');
+      o.value = y; o.textContent = y;
+      ysel.appendChild(o);
+    });
+
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('table-wrap').style.display = '';
+    fixTheadTop();
+    render();
+  }
+
+  async function boot() {
+    try {
+      const json = await tryFetch();
+      initData(json);
+    } catch {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('fallback').style.display = '';
+    }
+  }
+
+  document.getElementById('file-input').addEventListener('change', function () {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const json = JSON.parse(e.target.result);
+        document.getElementById('fallback').style.display = 'none';
+        initData(json);
+      } catch {
+        alert('Could not parse JSON file.');
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  // ── Render ──
+  function render() {
+    const q = document.getElementById('search').value.toLowerCase().trim();
+    const rF = document.getElementById('filter-ransomware').value;
+    const yF = document.getElementById('filter-year').value;
+
+    let data = allData.filter(v => {
+      if (rF && v.knownRansomwareCampaignUse !== rF) return false;
+      if (yF && (v.dateAdded || '').slice(0, 4) !== yF) return false;
+      if (q) {
+        const haystack = [v.cveID, v.vendorProject, v.product, v.vulnerabilityName].join(' ').toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      return true;
+    });
+
+    // Sort
+    const isDate = ['dateAdded', 'dueDate'].includes(sortCol);
+    data.sort((a, b) => {
+      let av = (a[sortCol] || '');
+      let bv = (b[sortCol] || '');
+      if (Array.isArray(av)) av = av.join();
+      if (Array.isArray(bv)) bv = bv.join();
+      const cmp = isDate ? av.localeCompare(bv) : av.toString().localeCompare(bv.toString(), undefined, { sensitivity: 'base' });
+      return cmp * sortDir;
+    });
+
+    // Result label
+    document.getElementById('result-label').textContent =
+      data.length.toLocaleString() + ' of ' + allData.length.toLocaleString() + ' shown';
+
+    // Render rows
+    const tbody = document.getElementById('tbody');
+    const frag = document.createDocumentFragment();
+    data.forEach(v => {
+      const tr = document.createElement('tr');
+      tr.className = 'data-row';
+      tr.dataset.cve = v.cveID;
+      tr.innerHTML =
+        `<td class="cve">${esc(v.cveID)}</td>` +
+        `<td class="vendor">${esc(v.vendorProject)}</td>` +
+        `<td class="product">${esc((v.product || '').trim())}</td>` +
+        `<td class="vname">${esc(v.vulnerabilityName)}</td>` +
+        `<td class="date">${esc(v.dateAdded)}</td>` +
+        `<td class="date">${esc(v.dueDate)}</td>` +
+        `<td>${rBadge(v.knownRansomwareCampaignUse)}</td>` +
+        `<td>${cweTags(v.cwes)}</td>`;
+      frag.appendChild(tr);
+    });
+    tbody.replaceChildren(frag);
+
+    document.getElementById('no-results').style.display = data.length === 0 ? '' : 'none';
+
+    // Sort arrows
+    document.querySelectorAll('th[data-col]').forEach(th => {
+      const active = th.dataset.col === sortCol;
+      th.dataset.active = active ? '1' : '0';
+      th.querySelector('.sort-arrow').textContent = active ? (sortDir === 1 ? ' ↑' : ' ↓') : '';
+    });
+  }
+
+  function esc(s) {
+    return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function rBadge(val) {
+    return val === 'Known'
+      ? `<span class="badge-ransomware">Known</span>`
+      : `<span class="badge-unknown">Unknown</span>`;
+  }
+
+  function cweTags(cwes) {
+    if (!cwes?.length) return '<span style="color:#334155">—</span>';
+    return cwes.map(c => `<span class="cwe">${esc(c)}</span>`).join('');
+  }
+
+  // ── Detail panel ──
+  function parseLinks(notes) {
+    if (!notes) return [];
+    return notes.split(';')
+      .map(s => s.trim())
+      .filter(s => s.startsWith('http'));
+  }
+
+  function linkLabel(url) {
+    try {
+      const u = new URL(url);
+      return u.hostname.replace(/^www\./, '');
+    } catch { return url; }
+  }
+
+  function toggleDetail(dataRow) {
+    const isOpen = dataRow.classList.contains('open');
+    // Close any open row
+    document.querySelectorAll('tr.data-row.open').forEach(r => {
+      r.classList.remove('open');
+      r.nextElementSibling?.remove();
+    });
+    if (isOpen) return;
+
+    const v = allData.find(x => x.cveID === dataRow.dataset.cve);
+    if (!v) return;
+
+    dataRow.classList.add('open');
+
+    const links = parseLinks(v.notes);
+    const linksHtml = links.length
+      ? links.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(linkLabel(u))}</a>`).join('')
+      : '<span style="color:var(--muted)">—</span>';
+
+    const detail = document.createElement('tr');
+    detail.className = 'detail-row';
+    detail.innerHTML = `<td colspan="8">
+      <div class="detail-panel">
+        <div class="detail-section">
+          <div class="detail-label">Summary</div>
+          <div class="detail-text">${esc(v.shortDescription)}</div>
+        </div>
+        <div class="detail-section">
+          <div class="detail-label">Required Action</div>
+          <div class="detail-text">${esc(v.requiredAction)}</div>
+        </div>
+        <div class="detail-section" style="grid-column:1/-1">
+          <div class="detail-label">References</div>
+          <div class="detail-links">${linksHtml}</div>
+        </div>
+      </div>
+    </td>`;
+    dataRow.after(detail);
+  }
+
+  document.getElementById('tbody').addEventListener('click', e => {
+    const row = e.target.closest('tr.data-row');
+    if (row) toggleDetail(row);
+  });
+
+  // ── Event listeners ──
+  document.getElementById('search').addEventListener('input', render);
+  document.getElementById('filter-ransomware').addEventListener('change', render);
+  document.getElementById('filter-year').addEventListener('change', render);
+
+  document.querySelectorAll('th[data-col]').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.dataset.col;
+      sortDir = col === sortCol ? sortDir * -1 : 1;
+      sortCol = col;
+      render();
+    });
+  });
+
+  window.addEventListener('resize', fixTheadTop);
+
+  boot();
+</script>
+</body>
+</html>
