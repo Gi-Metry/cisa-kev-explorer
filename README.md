@@ -23,7 +23,7 @@ python3 -m http.server 8000
 
 ## Data
 
-The bundled `known_exploited_vulnerabilities.json` is a snapshot of the catalogue — **version 2026.06.12, 1,619 entries** — included so the app works instantly with no setup.
+The bundled `known_exploited_vulnerabilities.json` is a snapshot of the catalogue — **version 2026.10.16, 1,748 entries** — included so the app works instantly with no setup.
 
 To use current data, download the latest catalogue JSON from [CISA's KEV page](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) and either replace the bundled file or load it through the app's file picker. The app works with any version of the catalogue file.
 
